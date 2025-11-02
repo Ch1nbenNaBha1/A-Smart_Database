@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Database App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top left, #f8f7f6, #ebe8e6);
+      color: #000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      animation: fadeIn 1s ease;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .glass:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 45px rgba(0, 0, 0, 0.15);
+    }
+
+    h1, h2 {
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    p {
+      margin-bottom: 15px;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+      animation: slideUp 0.6s ease;
+    }
+
+    input, button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"], input[type="file"] {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.5);
+      color: #000;
+    }
+
+    input:focus {
+      outline: 2px solid #000;
+    }
+
+    button {
+      cursor: pointer;
+      background: #000;
+      color: #f4f1ee;
+      transform: scale(1);
+      font-weight: 500;
+    }
+
+    button:hover {
+      background: #222;
+      transform: scale(1.05);
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      animation: slideUp 0.6s ease;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    tr:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    a {
+      text-decoration: none;
+      color: #000;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    a:hover {
+      color: #555;
+    }
+
+    .flash {
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      color: #fff;
+      opacity: 0;
+      animation: fadeInFlash 0.5s forwards;
+    }
+
+    .success { background: #4caf50; }
+    .error { background: #f44336; }
+    .info { background: #2196f3; }
+
+    /* Keyframes */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInFlash { from { opacity: 0; } to { opacity: 1; } }
+
+    @media(max-width: 600px) {
+      form { flex-direction: column; }
+      input, button { width: 100%; }
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    ul li {
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    details summary {
+      cursor: pointer;
+      color: #0077cc;
+      font-weight: 500;
+    }
+
+    details summary:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header and Controls -->
+    <div class="glass">
+      <h1>🗄 Secure Database</h1>
+      <p>Welcome, {{ user }}! <a href="{{ url_for('logout') }}">Logout</a></p>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Search -->
+      <form action="{{ url_for('search') }}" method="get">
+        <input type="text" name="q" placeholder="Search records..." value="{{ request.args.get('q', '') }}">
+        <button type="submit">🔍 Search</button>
+      </form>
+
+      <!-- Add Record -->
+      <form action="{{ url_for('add_record') }}" method="post">
+        <input type="text" name="record_id" placeholder="Record ID" required>
+        <input type="text" name="record_data" placeholder="Record Data (JSON or text)" required>
+        <button type="submit">➕ Add Record</button>
+      </form>
+
+      <!-- Upload JSON -->
+      <form action="{{ url_for('upload_json') }}" method="post" enctype="multipart/form-data">
+        <input type="file" name="json_file" accept=".json" required>
+        <button type="submit">📤 Upload JSON</button>
+      </form>
+    </div>
+
+    <!-- Records Section -->
+    <div class="glass">
+      <h2>📋 Records</h2>
+      {% if records %}
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Data</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rid, rdata in records %}
+          <tr>
+            <td><strong>{{ rid }}</strong></td>
+            <td>
+              {% if rdata is mapping %}
+                <ul>
+                  {% for key, value in rdata.items() %}
+                    <li><strong>{{ key }}:</strong> {{ value }}</li>
+                  {% endfor %}
+                </ul>
+              {% elif rdata is sequence and rdata is not string %}
+                <details>
+                  <summary>View List ({{ rdata|length }} items)</summary>
+                  <ul>
+                    {% for item in rdata %}
+                      <li>{{ item }}</li>
+                    {% endfor %}
+                  </ul>
+                </details>
+              {% else %}
+                {{ rdata }}
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('view_record', record_id=rid) }}">View</a> |
+              <a href="{{ url_for('delete_record', record_id=rid) }}" onclick="return confirm('Delete this record?');">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No records found.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    // Fade out flash messages
+    setTimeout(() => {
+      document.querySelectorAll('.flash').forEach(f => {
+        f.style.transition = 'opacity 0.5s ease';
+        f.style.opacity = '0';
+      });
+    }, 3000);
+  </script>
+</body>
+</html>

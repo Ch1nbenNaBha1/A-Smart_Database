@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Record {{ record_id }} - Secure Database</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body {
+      background: radial-gradient(circle at top left, #f8f7f6, #ebe8e6);
+      color: #000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+
+    .container { width: 100%; max-width: 800px; animation: fadeIn 1s ease; }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+    .glass:hover { transform: translateY(-6px); box-shadow: 0 12px 45px rgba(0,0,0,0.15); }
+
+    h1, h2 { margin-bottom: 15px; font-weight: 600; }
+    p { margin-bottom: 15px; }
+    a { text-decoration: none; color: #000; font-weight: 500; transition: color 0.3s ease; }
+    a:hover { color: #555; }
+
+    ul { list-style: none; padding-left: 0; }
+    ul li { padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+
+    details summary {
+      cursor: pointer;
+      color: #0077cc;
+      font-weight: 500;
+    }
+    details summary:hover { text-decoration: underline; }
+
+    pre {
+      background: rgba(255,255,255,0.2);
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    button {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      background: #000;
+      color: #f4f1ee;
+      font-weight: 500;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+    button:hover { transform: scale(1.05); background: #222; }
+    button:active { transform: scale(0.97); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="glass">
+      <h1>Record: {{ record_id }}</h1>
+      <p>Logged in as: {{ user }}</p>
+      <p>
+        <a href="{{ url_for('index') }}">← Back to Records</a> |
+        <a href="{{ url_for('delete_record', record_id=record_id) }}" onclick="return confirm('Delete this record?');">🗑 Delete Record</a> |
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </p>
+
+      <h2>Data:</h2>
+
+      {% macro render_json(data) %}
+        {% if data is mapping %}
+          <ul>
+          {% for key, value in data.items() %}
+            <li>
+              <strong>{{ key }}:</strong>
+              {% if value is mapping or (value is sequence and value is not string) %}
+                <details>
+                  <summary>View</summary>
+                  {{ render_json(value) }}
+                </details>
+              {% else %}
+                {{ value }}
+              {% endif %}
+            </li>
+          {% endfor %}
+          </ul>
+        {% elif data is sequence and data is not string %}
+          <ul>
+          {% for item in data %}
+            <li>
+              {% if item is mapping or (item is sequence and item is not string) %}
+                <details>
+                  <summary>View Item</summary>
+                  {{ render_json(item) }}
+                </details>
+              {% else %}
+                {{ item }}
+              {% endif %}
+            </li>
+          {% endfor %}
+          </ul>
+        {% else %}
+          <p>{{ data }}</p>
+        {% endif %}
+      {% endmacro %}
+
+      {{ render_json(record_data) }}
+
+      <h2>Raw JSON:</h2>
+      <pre>{{ record_data | tojson(indent=2) }}</pre>
+
+    </div>
+  </div>
+</body>
+</html>
